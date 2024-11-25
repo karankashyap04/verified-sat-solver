@@ -1,3 +1,5 @@
+import SatSolver.LoVeLib
+
 namespace SAT
 
 -- Variables (propositional symbols)
@@ -9,6 +11,11 @@ deriving DecidableEq, Repr
 inductive Literal : Type
   | pos : Var → Literal
   | neg : Var → Literal
+deriving DecidableEq, Repr
+
+def Literal.var : Literal → Var
+  | Literal.pos v => v
+  | Literal.neg v => v
 
 -- negation of a literal
 def Literal.negate : Literal → Literal
@@ -20,6 +27,12 @@ def Clause : Type := List Literal
 
 -- Formulae (conjunction of clauses) -- SAT problem represented in CNF
 def Formula : Type := List Clause
+
+-- gets the number of variables in a given formula
+def Formula.vars (f : Formula) : List Var :=
+  f.map (λ clause => clause.map (λ lit => lit.var))
+  |> List.join
+  |> List.dedup
 
 -- Assignments (mapping from variables to their truth values)
 def Assignment : Type := Var → Option Bool
