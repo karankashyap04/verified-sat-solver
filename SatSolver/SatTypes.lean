@@ -3,6 +3,7 @@ namespace SAT
 -- Variables (propositional symbols)
 inductive Var : Type
   | mk : Nat → Var
+deriving DecidableEq, Repr
 
 -- Literals (variables along with their truth value i.e. pos/neg)
 inductive Literal : Type
