@@ -1,5 +1,4 @@
 import SatSolver.SatTypes
-import SatSolver.LoVeLib
 
 namespace SAT
 
@@ -46,7 +45,7 @@ includes an extra variable `fuel` in the recursion -- it serves no
 functional purpose beyond being a term that clearly decreases in the
 recursive calls, allowing Lean to identify that this function actually
 terminates -/
-def Formula.unitPropagateAux (a : Assignment) : Formula → Nat → Assignment × Formula
+def Formula.unitPropagateAux (a : Assignment) : Formula → ℕ → Assignment × Formula
   | [], _ => (a, []) -- formula is empty (already SAT)
   | f, 0 => (a, f) -- safeguard: prevent infinite recursion
   | f, Nat.succ fuel =>
