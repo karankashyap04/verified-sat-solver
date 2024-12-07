@@ -24,9 +24,11 @@ def Literal.negate : Literal → Literal
 
 -- Clauses (disjunction of literals)
 def Clause : Type := List Literal
+deriving DecidableEq, Membership
 
 -- Formulae (conjunction of clauses) -- SAT problem represented in CNF
 def Formula : Type := List Clause
+deriving DecidableEq, Membership
 
 -- gets the number of variables in a given formula
 def Formula.vars (f : Formula) : List Var :=
