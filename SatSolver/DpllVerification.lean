@@ -106,20 +106,126 @@ by
     }
   }
 
-/- if calling DPLL on a formula returns some assignment, then the formula
-must be satisfiable under that assignment -/
-theorem DPLL_sound (f : Formula) (fuel : ℕ) :
-  ∀ a : Assignment, DPLL f = some a → Formula.satisfiable f a :=
+theorem DPLL_sound_none (f : Formula) (fuel : ℕ) (a_init : Assignment) :
+  (∀ a : Assignment, ¬f.satisfiable a) → DPLL_aux a_init f fuel = none :=
 by
-  intro a hDPLL_some
-  unfold DPLL at hDPLL_some
-  cases hf : f with
-  | nil => {
-    unfold Formula.satisfiable
-    apply forall_nil }
-  | cons hd tl => {
-    rw [hf] at hDPLL_some
-    simp at hDPLL_some
-    apply DPLL_sound_assignments (hd :: tl) (Formula.vars (hd :: tl)).length (fun x => none) a hDPLL_some }
+  intro hUNSAT
+  induction fuel generalizing f a_init with
+  | zero => {
+    unfold DPLL_aux
+    simp
+   }
+  | succ n ih => {
+    unfold DPLL_aux
+    cases hf : f with
+    | nil => {
+      unfold DPLL_aux
+      simp [hf] at hUNSAT
+      unfold Formula.satisfiable at hUNSAT
+      simp at hUNSAT
+      have h := hUNSAT a_init
+      obtain ⟨_, hClauseInF, _⟩ := h
+      contradiction
+    }
+    | cons clause rest => {
+      simp
+      cases hfSAT : Formula.isSAT a_init (clause :: rest) with
+      | true => {
+        simp
+        have h := hUNSAT a_init
+        unfold Formula.isSAT at hfSAT
+        have hSAT := List.forall_of_all (clause :: rest) (fun c => c.isSAT a_init) hfSAT
+        rw [← hf] at hSAT
+        simp at hSAT
+        unfold Clause.isSAT at hSAT
+        unfold Formula.satisfiable at h
+        simp at h
+        obtain ⟨c, hmem, hcUNSAT⟩ := h
+        have hcSAT := hSAT c hmem
+        have hcSAT' := List.exists_of_any c (fun lit => decide (Literal.eval a_init lit = some true)) hcSAT
+        simp at hcSAT'
+        obtain ⟨lit, hLitInC, hLitEval⟩ := hcSAT'
+        apply hcUNSAT lit hLitInC hLitEval
+      }
+      | false => {
+        simp
+        cases hfUNSAT : Formula.isUNSAT a_init (clause :: rest) with
+        | true => { simp }
+        | false => {
+          simp
+          rw[← hf]
+          cases hup : Formula.unitPropagate a_init f with
+          | some a' => {
+            simp
+            apply ih f a' hUNSAT
+           }
+          | none => {
+            simp
+            cases hchoose : Formula.chooseVar2 a_init f with
+            | none => { simp }
+            | some lit => {
+              simp
+              generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
+              cases hbranch : DPLL_aux a_true f n with
+              | some a' => {
+                simp
+                have h := DPLL_sound_assignments f n a_true a' hbranch
+                have h' := hUNSAT a'
+                contradiction
+               }
+              | none => {
+                simp
+                generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
+                cases hbranch' : DPLL_aux a_false f n with
+                | some a' => {
+                  simp
+                  have h := DPLL_sound_assignments f n a_false a' hbranch'
+                  have h' := hUNSAT a'
+                  contradiction
+                 }
+                | none => { simp }
+               }
+             }
+           }
+         }
+      }
+    }
+   }
+
+/- if calling DPLL on a formula returns some assignment, then the formula
+must be satisfiable under that assignment, AND
+if a formula is not satisfiable for any possible assignment, then calling
+DPLL on that formula returns none (represents UNSAT) -/
+theorem DPLL_sound (f : Formula) (fuel : ℕ) :
+  (∀ a : Assignment, DPLL f = some a → Formula.satisfiable f a) ∧
+  ((∀ a : Assignment, ¬Formula.satisfiable f a) → DPLL f = none) :=
+by
+  apply And.intro
+  { intro a hDPLL_some
+    unfold DPLL at hDPLL_some
+    cases hf : f with
+    | nil => {
+      unfold Formula.satisfiable
+      apply forall_nil }
+    | cons hd tl => {
+      rw [hf] at hDPLL_some
+      simp at hDPLL_some
+      apply DPLL_sound_assignments (hd :: tl) (Formula.vars (hd :: tl)).length (fun x => none) a hDPLL_some } }
+  { intro hUNSAT
+    unfold DPLL
+    cases hf : f with
+    | nil => {
+      simp
+      simp [hf] at hUNSAT
+      unfold Formula.satisfiable at hUNSAT
+      have h := hUNSAT (fun x => none)
+      simp at h
+      obtain ⟨_, hClauseInF, _⟩ := h
+      contradiction
+     }
+    | cons hd tl => {
+      simp
+      rw [← hf]
+      apply DPLL_sound_none f (Formula.vars f).length (fun x => none) hUNSAT } }
 
 end SAT
