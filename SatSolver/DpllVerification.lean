@@ -89,41 +89,20 @@ by
           | some lit => {
             rw [hchoose] at hDPLL_some
             simp at hDPLL_some
-            cases hlit : lit with
-            | pos v => {
-              rw [hlit] at hDPLL_some
-              simp at hDPLL_some
-              generalize h_atrue : (λ var => if var = v then some true else a_init var) = a_true
-              rw [h_atrue] at hDPLL_some
-              cases hbranch : DPLL_aux a_true f n with
+            generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
+            rw [h_atrue] at hDPLL_some
+            cases hbranch : DPLL_aux a_true f n with
               | some a' => {
                 rw [hbranch] at hDPLL_some
                 simp at hDPLL_some
                 rw [← hDPLL_some]
                 apply ih f a_true a' hbranch h_clause_mem }
               | none => {
-                generalize h_afalse : (λ var => if var = v then some false else a_init var) = a_false
+                generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
                 rw [h_afalse] at hDPLL_some
                 rw [hbranch] at hDPLL_some
                 simp at hDPLL_some
-                apply ih f a_false a hDPLL_some h_clause_mem } }
-            | neg v => {
-              rw [hlit] at hDPLL_some
-              simp at hDPLL_some
-              generalize h_afalse : (λ var => if var = v then some false else a_init var) = a_false
-              rw [h_afalse] at hDPLL_some
-              cases hbranch : DPLL_aux a_false f n with
-              | some a' => {
-                rw [hbranch] at hDPLL_some
-                simp at hDPLL_some
-                rw [← hDPLL_some]
-                apply ih f a_false a' hbranch h_clause_mem }
-              | none => {
-                generalize h_atrue : (λ var => if var = v then some true else a_init var) = a_true
-                rw [h_atrue] at hDPLL_some
-                rw [hbranch] at hDPLL_some
-                simp at hDPLL_some
-                apply ih f a_true a hDPLL_some h_clause_mem } } } } }
+                apply ih f a_false a hDPLL_some h_clause_mem } } } }
     }
   }
 

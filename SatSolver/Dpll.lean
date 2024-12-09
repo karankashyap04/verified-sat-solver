@@ -45,24 +45,12 @@ def DPLL_aux (a : Assignment) : Formula → ℕ → Option Assignment
         match f.chooseVar2 a with -- [TODO]: maybe need to change this to chooseVar (instead of chooseVar2)
         | none => none -- no unassigned variables (shouldn't happen)
         | some lit =>
-          match lit with
-          -- [TODO]: might not need separate true first vs false first behavior
-          -- (had added this earlier, but with the latest implementation, this
-          -- shouldn't be necessary)
-          | Literal.pos v =>
-            let a_true := λ var => if var = v then some true else a var
-            match DPLL_aux a_true f fuel with
-            | some a' => some a'
-            | none =>
-              let a_false := λ var => if var = v then some false else a var
-              DPLL_aux a_false f fuel
-          | Literal.neg v =>
-            let a_false := λ var => if var = v then some false else a var
-            match DPLL_aux a_false f fuel with
-            | some a' => some a'
-            | none =>
-              let a_true := λ var => if var = v then some true else a var
-              DPLL_aux a_true f fuel
+          let a_true := λ var => if var = lit.var then some true else a var
+          match DPLL_aux a_true f fuel with
+          | some a' => some a'
+          | none =>
+            let a_false := λ var => if var = lit.var then some false else a var
+            DPLL_aux a_false f fuel
 
 def DPLL (f : Formula) : Option Assignment :=
   if f = [] then some (λ _ => none) else
