@@ -141,7 +141,7 @@ def Formula.satisfiable (f : Formula) (a : Assignment) : Prop :=
 
 While the theorems proven of this implementation certainly increase confidence in the correctness of this
 implementation, there is some future work that could be interesting:
-- **Prove additional properties**: it would be helpful to prove that if there exists _some_ assignment under
+- **Prove additional properties**: it would be helpful to prove that if there exists some assignment under
 which a formula is satisfiable, then calling DPLL on the formula results in an assignment being returned
 (no false negatives).
 - **Make the DPLL implementation more efficient**: in the past, I've spent time implementing SAT solvers with the explicit
