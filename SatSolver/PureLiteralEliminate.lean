@@ -4,8 +4,10 @@ namespace SAT
 
 def Formula.findPureLiteral (a : Assignment) : Formula → Option Literal :=
   fun f =>
-    let posLits := f.join.dedup.filter (λ lit => lit.isPos)
-    let negLits := f.join.dedup.filter (λ lit => lit.isNeg)
+    let clausesNotYetSatisfied := f.filter (λ clause => ¬clause.isSAT a)
+    let lits := clausesNotYetSatisfied.join.dedup.filter (λ lit => a lit.var = none)
+    let posLits := lits.filter (λ lit => lit.isPos)
+    let negLits := lits.filter (λ lit => lit.isNeg)
     let pureLits := posLits.diff (negLits.map Literal.negate) ++ negLits.diff (posLits.map Literal.negate)
     match pureLits with
     | [lit] => some lit
