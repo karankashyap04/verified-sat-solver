@@ -3,7 +3,7 @@
 [Github Repository](https://github.com/karankashyap04/verified-sat-solver)
 
 SAT solvers are increasingly being used to power "automated reasoning" systems. Given the
-critical nature of some some applications of these tools, it seems important to verify
+critical nature of some applications of these tools, it seems important to verify
 the correctness of the SAT solvers we use.
 
 This is an implementation of a DPLL SAT solver in Lean. Additionally, there are some theorems
@@ -25,8 +25,8 @@ the formula is a conjunction of these clauses, the formula as a whole is in CNF.
 and they represent the manner in which a variable is evaluated in a clause.
 
 Therefore, overall, a formula is a conjunction of clauses. Each clause is a disjunction of literals.
-The goal of DPLL is to consume a formula and determine whether or not their exists an assignment of
-truth values to the variables for which the formula will be satisfied (since the formula is a disjunction of
+The goal of DPLL is to determine, for a given formula, whether or not their exists an assignment of
+truth values to the variables under which the formula will be satisfied (since the formula is a disjunction of
 its clauses, this effectively means that each clause needs to be satisfied). <br>
 Often (and as has been implemented in this project), SAT solvers don't _just_ determine whether or not a formula
 is satisfiable; if it is satisfiable they also return an **assignment** (truth values assigned to the variables)
@@ -91,6 +91,17 @@ satisfied under the returned assignment. While there are many other helper funct
 unit propagation, pure literal elimination, etc), this is the main DPLL function that would be called when
 solving a SAT problem.
 
+As an example, we defined the following formula and called DPLL on it:
+```lean
+def exampleFormula : Formula :=
+  [[Literal.pos (Var.mk 0), Literal.neg (Var.mk 1)], [Literal.neg (Var.mk 0), Literal.pos (Var.mk 1)]]
+
+#eval DPLL exampleFormula
+```
+
+A SAT result with both variables `0` and `1` mapped to `true` was returned, which is a valid SAT result.
+This example is commented out at the bottom of [SatSolver/Dpll.lean](./SatSolver/Dpll.lean).
+
 
 ## Verifications
 
@@ -109,7 +120,7 @@ theorem DPLL_good_none (f : Formula) :
   (∀ a : Assignment, ¬Formula.satisfiable f a) → DPLL f = none
 ```
 
-The propositions being proved in each of these theorems references the proposition `Formula.satisfiable`, which
+The propositions being proven in the theorems above reference `Formula.satisfiable`, which
 is as follows:
 ```lean
 -- evaluates a literal under a given assignment
