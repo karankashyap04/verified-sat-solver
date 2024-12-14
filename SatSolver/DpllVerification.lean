@@ -34,7 +34,8 @@ lemma forall_nil {α : Type} (P : α → Prop) : ∀ x ∈ ([] : List α), P x :
     intro x hx
     contradiction
 
-theorem DPLL_sound_assignments (f : Formula) (fuel : ℕ) (a_init : Assignment) :
+/- helper lemma for DPLL_good_assignments (below) -/
+lemma DPLL_aux_good_assignments (f : Formula) (fuel : ℕ) (a_init : Assignment) :
   ∀ a : Assignment, DPLL_aux a_init f fuel = some a → Formula.satisfiable f a :=
 by
   intro a hDPLL_some
@@ -115,7 +116,8 @@ by
     }
   }
 
-theorem DPLL_sound_none (f : Formula) (fuel : ℕ) (a_init : Assignment) :
+/- helper lemma for DPLL_good_none (below) -/
+theorem DPLL_aux_good_none (f : Formula) (fuel : ℕ) (a_init : Assignment) :
   (∀ a : Assignment, ¬f.satisfiable a) → DPLL_aux a_init f fuel = none :=
 by
   intro hUNSAT
@@ -185,7 +187,7 @@ by
                 cases hbranch : DPLL_aux a_true f n with
                 | some a' => {
                   simp
-                  have h := DPLL_sound_assignments f n a_true a' hbranch
+                  have h := DPLL_aux_good_assignments f n a_true a' hbranch
                   have h' := hUNSAT a'
                   contradiction
                 }
@@ -195,47 +197,48 @@ by
                   cases hbranch' : DPLL_aux a_false f n with
                   | some a' => {
                     simp
-                    have h := DPLL_sound_assignments f n a_false a' hbranch'
+                    have h := DPLL_aux_good_assignments f n a_false a' hbranch'
                     have h' := hUNSAT a'
                     contradiction
                   }
                   | none => { simp } } } } } } } } }
 
 /- if calling DPLL on a formula returns some assignment, then the formula
-must be satisfiable under that assignment, AND
-if a formula is not satisfiable for any possible assignment, then calling
-DPLL on that formula returns none (represents UNSAT)
-[TODO] let's split these up into 2 things  -/
-theorem DPLL_sound (f : Formula) (fuel : ℕ) :
-  (∀ a : Assignment, DPLL f = some a → Formula.satisfiable f a) ∧
-  ((∀ a : Assignment, ¬Formula.satisfiable f a) → DPLL f = none) :=
+must be satisfiable under that assignment -/
+theorem DPLL_good_assignments (f : Formula) :
+  ∀ a : Assignment, DPLL f = some a → Formula.satisfiable f a :=
 by
-  apply And.intro
-  { intro a hDPLL_some
-    unfold DPLL at hDPLL_some
-    cases hf : f with
-    | nil => {
-      unfold Formula.satisfiable
-      apply forall_nil }
-    | cons hd tl => {
-      rw [hf] at hDPLL_some
-      simp at hDPLL_some
-      apply DPLL_sound_assignments (hd :: tl) ((Formula.vars (hd :: tl)).length + 1) (fun x => none) a hDPLL_some } }
-  { intro hUNSAT
-    unfold DPLL
-    cases hf : f with
-    | nil => {
-      simp
-      simp [hf] at hUNSAT
-      unfold Formula.satisfiable at hUNSAT
-      have h := hUNSAT (fun x => none)
-      simp at h
-      obtain ⟨_, hClauseInF, _⟩ := h
-      contradiction
-     }
-    | cons hd tl => {
-      simp
-      rw [← hf]
-      apply DPLL_sound_none f ((Formula.vars f).length + 1) (fun x => none) hUNSAT } }
+  intro a hDPLL_some
+  unfold DPLL at hDPLL_some
+  cases hf : f with
+  | nil => {
+    unfold Formula.satisfiable
+    apply forall_nil }
+  | cons hd tl => {
+    rw [hf] at hDPLL_some
+    simp at hDPLL_some
+    apply DPLL_aux_good_assignments (hd :: tl) ((Formula.vars (hd :: tl)).length + 1) (fun x => none) a hDPLL_some }
+
+/- if a formula is not satisfiable for any possible assignment, then calling
+DPLL on that formula returns none (represents UNSAT) -/
+theorem DPLL_good_none (f : Formula) :
+  (∀ a : Assignment, ¬Formula.satisfiable f a) → DPLL f = none :=
+by
+  intro hUNSAT
+  unfold DPLL
+  cases hf : f with
+  | nil => {
+    simp
+    simp [hf] at hUNSAT
+    unfold Formula.satisfiable at hUNSAT
+    have h := hUNSAT (fun x => none)
+    simp at h
+    obtain ⟨_, hClauseInF, _⟩ := h
+    contradiction
+    }
+  | cons hd tl => {
+    simp
+    rw [← hf]
+    apply DPLL_aux_good_none f ((Formula.vars f).length + 1) (fun x => none) hUNSAT }
 
 end SAT
