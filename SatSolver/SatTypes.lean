@@ -56,4 +56,16 @@ def Literal.eval (a : Assignment) : Literal → Option Bool
     | some b => some (not b)
     | none => none
 
+def Clause.isUNSAT (a : Assignment) : Clause → Bool :=
+  fun clause => clause.all (λ lit => Literal.eval a lit = some false)
+
+def Clause.isSAT (a : Assignment) : Clause → Bool :=
+  fun clause => clause.any (λ lit => Literal.eval a lit = some true)
+
+def Formula.isUNSAT (a : Assignment) : Formula → Bool :=
+  fun f => f.any (λ clause => clause.isUNSAT a)
+
+def Formula.isSAT (a : Assignment) : Formula → Bool :=
+  fun f => f.all (λ clause => clause.isSAT a)
+
 end SAT
