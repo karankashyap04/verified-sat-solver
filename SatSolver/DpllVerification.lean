@@ -64,7 +64,7 @@ by
           | none => { -- no unit propagation occurred (so we will branch on a variable)
             rw [h_up] at hDPLL_some
             simp at hDPLL_some
-            cases hchoose : f.chooseVar2 a_init with
+            cases hchoose : f.chooseVar a_init with
             | none => { -- no variable to branch on (shouldn't happen)
               rw [hchoose] at hDPLL_some
               simp at hDPLL_some }
@@ -152,7 +152,7 @@ by
             }
             | none => {
               simp
-              cases hchoose : Formula.chooseVar2 a_init f with
+              cases hchoose : Formula.chooseVar a_init f with
               | none => { simp }
               | some lit => {
                 simp
