@@ -22,6 +22,13 @@ def Literal.negate : Literal → Literal
   | Literal.pos v => Literal.neg v
   | Literal.neg v => Literal.pos v
 
+def Literal.isPos : Literal → Bool
+  | Literal.pos _ => true
+  | Literal.neg _ => false
+
+def Literal.isNeg : Literal → Bool :=
+  fun lit => !lit.isPos
+
 -- Clauses (disjunction of literals)
 def Clause : Type := List Literal
 deriving DecidableEq, Membership

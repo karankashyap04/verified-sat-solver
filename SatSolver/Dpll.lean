@@ -1,5 +1,6 @@
 import SatSolver.SatTypes
 import SatSolver.UnitPropagate
+import SatSolver.PureLiteralEliminate
 import SatSolver.ReprInstances
 
 namespace SAT
@@ -39,22 +40,25 @@ def DPLL_aux (a : Assignment) : Formula → ℕ → Option Assignment
     if f.isSAT a then some a
     else if f.isUNSAT a then none
     else
-      match f.unitPropagate a with
+      match f.pureLiteralEliminate a with
       | some a' => DPLL_aux a' f fuel
       | none =>
-        match f.chooseVar2 a with -- [TODO]: maybe need to change this to chooseVar (instead of chooseVar2)
-        | none => none -- no unassigned variables (shouldn't happen)
-        | some lit =>
-          let a_true := λ var => if var = lit.var then some true else a var
-          match DPLL_aux a_true f fuel with
-          | some a' => some a'
-          | none =>
-            let a_false := λ var => if var = lit.var then some false else a var
-            DPLL_aux a_false f fuel
+        match f.unitPropagate a with
+        | some a' => DPLL_aux a' f fuel
+        | none =>
+          match f.chooseVar2 a with -- [TODO]: maybe need to change this to chooseVar (instead of chooseVar2)
+          | none => none -- no unassigned variables (shouldn't happen)
+          | some lit =>
+            let a_true := λ var => if var = lit.var then some true else a var
+            match DPLL_aux a_true f fuel with
+            | some a' => some a'
+            | none =>
+              let a_false := λ var => if var = lit.var then some false else a var
+              DPLL_aux a_false f fuel
 
 def DPLL (f : Formula) : Option Assignment :=
   if f = [] then some (λ _ => none) else
-    DPLL_aux (λ _ => none) f f.vars.length
+    DPLL_aux (λ _ => none) f (f.vars.length + 1)
 
 -- def displayResult (result : Option Assignment) (f : Formula) : String :=
 --   match result with

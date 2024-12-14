@@ -74,35 +74,44 @@ by
         have h_notUNSAT : Formula.isUNSAT a_init f = false := by aesop
         rw [h_notUNSAT] at hDPLL_some
         simp at hDPLL_some
-        cases h_up : f.unitPropagate a_init with
-        | some a' => { -- some unit propagation occurred
-          rw [h_up] at hDPLL_some
+        cases h_pure : f.pureLiteralEliminate a_init with
+        | some a' => {
+          rw [h_pure] at hDPLL_some
           simp at hDPLL_some
           apply ih f a' a hDPLL_some h_clause_mem }
-        | none => { -- no unit propagation occurred (so we will branch on a variable)
-          rw [h_up] at hDPLL_some
+        | none => {
+          rw [h_pure] at hDPLL_some
           simp at hDPLL_some
-          cases hchoose : f.chooseVar2 a_init with
-          | none => { -- no variable to branch on (shouldn't happen)
-            rw [hchoose] at hDPLL_some
-            simp at hDPLL_some }
-          | some lit => {
-            rw [hchoose] at hDPLL_some
+          cases h_up : f.unitPropagate a_init with
+          | some a' => { -- some unit propagation occurred
+            rw [h_up] at hDPLL_some
             simp at hDPLL_some
-            generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
-            rw [h_atrue] at hDPLL_some
-            cases hbranch : DPLL_aux a_true f n with
-              | some a' => {
-                rw [hbranch] at hDPLL_some
-                simp at hDPLL_some
-                rw [← hDPLL_some]
-                apply ih f a_true a' hbranch h_clause_mem }
-              | none => {
-                generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
-                rw [h_afalse] at hDPLL_some
-                rw [hbranch] at hDPLL_some
-                simp at hDPLL_some
-                apply ih f a_false a hDPLL_some h_clause_mem } } } }
+            apply ih f a' a hDPLL_some h_clause_mem }
+          | none => { -- no unit propagation occurred (so we will branch on a variable)
+            rw [h_up] at hDPLL_some
+            simp at hDPLL_some
+            cases hchoose : f.chooseVar2 a_init with
+            | none => { -- no variable to branch on (shouldn't happen)
+              rw [hchoose] at hDPLL_some
+              simp at hDPLL_some }
+            | some lit => {
+              rw [hchoose] at hDPLL_some
+              simp at hDPLL_some
+              generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
+              rw [h_atrue] at hDPLL_some
+              cases hbranch : DPLL_aux a_true f n with
+                | some a' => {
+                  rw [hbranch] at hDPLL_some
+                  simp at hDPLL_some
+                  rw [← hDPLL_some]
+                  apply ih f a_true a' hbranch h_clause_mem }
+                | none => {
+                  generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
+                  rw [h_afalse] at hDPLL_some
+                  rw [hbranch] at hDPLL_some
+                  simp at hDPLL_some
+                  apply ih f a_false a hDPLL_some h_clause_mem } } }
+         } }
     }
   }
 
@@ -154,48 +163,49 @@ by
         | false => {
           simp
           rw[← hf]
-          cases hup : Formula.unitPropagate a_init f with
+          cases hpure : Formula.pureLiteralEliminate a_init f with
           | some a' => {
             simp
             apply ih f a' hUNSAT
            }
           | none => {
             simp
-            cases hchoose : Formula.chooseVar2 a_init f with
-            | none => { simp }
-            | some lit => {
+            cases hup : Formula.unitPropagate a_init f with
+            | some a' => {
               simp
-              generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
-              cases hbranch : DPLL_aux a_true f n with
-              | some a' => {
+              apply ih f a' hUNSAT
+            }
+            | none => {
+              simp
+              cases hchoose : Formula.chooseVar2 a_init f with
+              | none => { simp }
+              | some lit => {
                 simp
-                have h := DPLL_sound_assignments f n a_true a' hbranch
-                have h' := hUNSAT a'
-                contradiction
-               }
-              | none => {
-                simp
-                generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
-                cases hbranch' : DPLL_aux a_false f n with
+                generalize h_atrue : (λ var => if var = lit.var then some true else a_init var) = a_true
+                cases hbranch : DPLL_aux a_true f n with
                 | some a' => {
                   simp
-                  have h := DPLL_sound_assignments f n a_false a' hbranch'
+                  have h := DPLL_sound_assignments f n a_true a' hbranch
                   have h' := hUNSAT a'
                   contradiction
-                 }
-                | none => { simp }
-               }
-             }
-           }
-         }
-      }
-    }
-   }
+                }
+                | none => {
+                  simp
+                  generalize h_afalse : (λ var => if var = lit.var then some false else a_init var) = a_false
+                  cases hbranch' : DPLL_aux a_false f n with
+                  | some a' => {
+                    simp
+                    have h := DPLL_sound_assignments f n a_false a' hbranch'
+                    have h' := hUNSAT a'
+                    contradiction
+                  }
+                  | none => { simp } } } } } } } } }
 
 /- if calling DPLL on a formula returns some assignment, then the formula
 must be satisfiable under that assignment, AND
 if a formula is not satisfiable for any possible assignment, then calling
-DPLL on that formula returns none (represents UNSAT) -/
+DPLL on that formula returns none (represents UNSAT)
+[TODO] let's split these up into 2 things  -/
 theorem DPLL_sound (f : Formula) (fuel : ℕ) :
   (∀ a : Assignment, DPLL f = some a → Formula.satisfiable f a) ∧
   ((∀ a : Assignment, ¬Formula.satisfiable f a) → DPLL f = none) :=
@@ -210,7 +220,7 @@ by
     | cons hd tl => {
       rw [hf] at hDPLL_some
       simp at hDPLL_some
-      apply DPLL_sound_assignments (hd :: tl) (Formula.vars (hd :: tl)).length (fun x => none) a hDPLL_some } }
+      apply DPLL_sound_assignments (hd :: tl) ((Formula.vars (hd :: tl)).length + 1) (fun x => none) a hDPLL_some } }
   { intro hUNSAT
     unfold DPLL
     cases hf : f with
@@ -226,6 +236,6 @@ by
     | cons hd tl => {
       simp
       rw [← hf]
-      apply DPLL_sound_none f (Formula.vars f).length (fun x => none) hUNSAT } }
+      apply DPLL_sound_none f ((Formula.vars f).length + 1) (fun x => none) hUNSAT } }
 
 end SAT
